@@ -1,8 +1,6 @@
 import os
 import streamlit as st
 
-from dotenv import load_dotenv
-
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 
@@ -19,23 +17,35 @@ st.title("🥗 AI Personalized Diet Planner")
 st.write("Generate a calorie target and meal plan using Generative AI")
 
 # -----------------------------
-# API Key Setup 
+# API Key Setup (Works locally and on Streamlit Cloud)
 # -----------------------------
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()  # Load from .env for local development
+except ImportError:
+    pass  # dotenv not needed on Streamlit Cloud
 
+# Get API key from environment or Streamlit secrets
+api_key = os.getenv("GOOGLE_API_KEY") or st.secrets.get("GOOGLE_API_KEY")
 
+if not api_key:
+    st.error("⚠️ Google API Key not found! Please add it in Streamlit Cloud secrets.")
+    st.info("Go to: Settings → Secrets → Add GOOGLE_API_KEY")
+    st.stop()
 
 # -----------------------------
 # Initialize LLM
 # -----------------------------
 try:
     llm = ChatGoogleGenerativeAI(
-        model="models/gemini-2.5-flash",  #  Free tier model
-        temperature=0.4
+        model="models/gemini-2.5-flash",
+        temperature=0.4,
+        google_api_key=api_key  # Explicitly pass the API key
     )
 except Exception as e:
     st.error(f"Failed to initialize AI model: {e}")
     st.stop()
+
 
 # -----------------------------
 # Prompt Template
@@ -150,3 +160,4 @@ if submit:
         except Exception as e:
             st.error("Something went wrong while generating the plan.")
             st.exception(e)
+
